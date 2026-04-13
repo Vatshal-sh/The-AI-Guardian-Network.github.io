@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The AI Guardian Network</title>
+    <style>
+        :root {
+            --primary: #1a365d;
+            --secondary: #3182ce;
+            --accent: #38b2ac;
+            --danger: #e53e3e;
+            --warning: #dd6b20;
+            --success: #38a169;
+            --bg: #f7fafc;
+            --surface: #ffffff;
+            --text: #2d3748;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            width: 280px;
+            background-color: var(--primary);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            background-color: #152b4a;
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            padding: 15px 0;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            padding: 15px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background-color: rgba(255,255,255,0.05);
+        }
+
+        .nav-item.active {
+            background-color: rgba(255,255,255,0.1);
+            border-left: 4px solid var(--accent);
+            font-weight: bold;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .panel {
+            display: none;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: var(--surface);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        h2 { color: var(--primary); margin-top: 0; border-bottom: 2px solid var(--bg); padding-bottom: 10px;}
+
+        /* Specific Feature Styling */
+        /* 1. Toggle Switch */
+        .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--success); }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        /* 2. Chat Box */
+        .chat-container { border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; height: 250px; overflow-y: auto; background: #edf2f7; display: flex; flex-direction: column; }
+        .msg { margin-bottom: 10px; padding: 12px; border-radius: 8px; max-width: 80%; }
+        .msg.received { background: white; align-self: flex-start; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        .msg.sent { background: var(--secondary); color: white; align-self: flex-end; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .msg.warning { background: #fffaf0; border: 2px solid var(--warning); align-self: center; width: 90%; color: var(--warning); font-weight: bold; text-align: center; }
+
+        .chat-input-area { display: flex; gap: 10px; margin-top: 15px; }
+        .chat-input-area input { flex: 1; padding: 12px; border: 1px solid #cbd5e0; border-radius: 6px; outline: none; }
+        .chat-input-area input:focus { border-color: var(--secondary); }
+
+        /* 3. Image Upload */
+        .upload-area { border: 2px dashed #cbd5e0; padding: 30px; text-align: center; border-radius: 8px; margin-top: 15px; background: #faf8f8; transition: 0.3s; }
+        .upload-area:hover { border-color: var(--secondary); background: #ebf8ff; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--secondary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 10px auto; display: none; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* 4. Trust Score */
+        .score-circle { width: 150px; height: 150px; border-radius: 50%; border: 10px solid #cbd5e0; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: bold; color: var(--text); margin: 20px auto; transition: border-color 0.5s ease, color 0.5s ease; }
+        .trust-input-area { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
+        .trust-input-area input { padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; width: 60%; outline: none; }
+
+        /* 7. SOS Button */
+        .sos-btn { background-color: var(--danger); color: white; border: none; padding: 20px; border-radius: 50%; width: 150px; height: 150px; font-size: 2rem; font-weight: bold; cursor: pointer; box-shadow: 0 0 20px rgba(229, 62, 62, 0.5); display: block; margin: 50px auto; transition: 0.2s; }
+        .sos-btn:hover { transform: scale(1.05); }
+        .sos-btn:active { transform: scale(0.95); }
+
+        /* Generic Button */
+        .btn { background: var(--secondary); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn:hover { background: var(--primary); }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header">🛡️ AI Guardian</div>
+        <div class="nav-menu">
+            <div class="nav-item" onclick="showPanel('guardian', this)">🛡️ 1. AI Guardian Mode</div>
+            <div class="nav-item" onclick="showPanel('chat', this)">💬 2. Smart Chat Protection</div>
+            <div class="nav-item" onclick="showPanel('image', this)">📸 3. Image Misuse Alert</div>
+            <div class="nav-item" onclick="showPanel('trust', this)">⭐ 4. AI Trust Score</div>
+            <div class="nav-item active" onclick="showPanel('dashboard', this)">📊 5. Parental Dashboard</div>
+            <div class="nav-item" onclick="showPanel('content', this)">✅ 6. Safe Content</div>
+            <div class="nav-item" onclick="showPanel('sos', this)">🆘 7. Emergency Help</div>
+        </div>
+    </div>
+
+    <div class="main-content">
+
+        <div id="dashboard" class="panel active">
+            <div class="card">
+                <h2>Real-Time Parental Dashboard</h2>
+                <p>Overview of collaborating AI agents across networks.</p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+                    <div style="padding: 15px; background: #e6fffa; border-left: 4px solid var(--success);">
+                        <strong>System Status</strong><br>All Agents Active. Cross-platform monitoring engaged.
+                    </div>
+                    <div style="padding: 15px; background: #fff5f5; border-left: 4px solid var(--danger);">
+                        <strong>Recent Block</strong><br>User "Anon88" blocked due to low Trust Score (12/100).
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="guardian" class="panel">
+            <div class="card">
+                <h2>AI Guardian Mode</h2>
+                <p>Automatically filters harmful content and restricts unknown users from contacting minors.</p>
+                <div style="display: flex; align-items: center; justify-content: space-between; background: var(--bg); padding: 20px; border-radius: 8px;">
+                    <span style="font-size: 1.2rem; font-weight: bold;">Enable Deep Filtering & Restrictions</span>
+                    <label class="switch">
+                        <input type="checkbox" checked onchange="alert(this.checked ? 'Guardian Mode Activated' : 'Warning: Protections Disabled')">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div id="chat" class="panel">
+            <div class="card">
+                <h2>Smart Live Chat Protection</h2>
+                <p>AI monitors chats in real-time. Try typing keywords like <strong>"address"</strong>, <strong>"secret"</strong>, or <strong>"meet"</strong> to trigger the AI.</p>
+                <div class="chat-container" id="chatBox">
+                    <div class="msg received">Hey, want some free in-game currency?</div>
+                    <div class="msg received">Just tell me your address so I can send it.</div>
+                </div>
+                <div class="chat-input-area">
+                    <input type="text" id="chatInput" placeholder="Type a message here..." onkeypress="handleChatEnter(event)">
+                    <button class="btn" onclick="sendChatMessage()">Send</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="image" class="panel">
+            <div class="card">
+                <h2>Live Image Misuse Alert</h2>
+                <p>Upload a photo. The AI agent will hash the image and scan the web for unauthorized reuse.</p>
+                
+                <div class="upload-area">
+                    <p style="margin-bottom: 15px; font-weight: bold; color: var(--primary);">Drag & Drop or Click to Upload</p>
+                    <input type="file" id="imageInput" accept="image/*" onchange="processImageUpload(this)">
+                    <div class="loader" id="imageLoader"></div>
+                </div>
+
+                <div id="imageResult" style="display: none; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; text-align: center; margin-top: 20px;">
+                    <div style="font-size: 40px; margin-bottom: 10px;">🔍🖼️</div>
+                    <h3 id="imageAlertTitle" style="color: var(--danger);">Scanning Complete</h3>
+                    <p id="imageAlertText">Results will appear here.</p>
+                    <button class="btn" id="imageActionBtn" style="background: var(--danger); display:none;">Issue Takedown Hash</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="trust" class="panel">
+            <div class="card" style="text-align: center;">
+                <h2>Live AI Trust Score Generator</h2>
+                <p>Enter a username or profile ID to dynamically scrape and calculate their safety score.</p>
+                
+                <div class="trust-input-area">
+                    <input type="text" id="usernameInput" placeholder="e.g., GamerX_99">
+                    <button class="btn" onclick="generateTrustScore()">Analyze Profile</button>
+                </div>
+
+                <div id="scoreResultArea" style="display: none; margin-top: 30px;">
+                    <div class="loader" id="scoreLoader"></div>
+                    <div id="scoreData" style="display: none;">
+                        <div class="score-circle" id="liveScoreCircle">--</div>
+                        <h3 id="scoreRiskTitle">Analyzing...</h3>
+                        <p id="scoreRiskReason"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="content" class="panel">
+            <div class="card">
+                <h2>Safe Content Recommendation</h2>
+                <p>Hides harmful posts. Showing only verified, age-appropriate material.</p>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                    <div style="height: 100px; background: #bee3f8; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--primary);">Educational Video</div>
+                    <div style="height: 100px; background: #c6f6d5; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--success);">Math Puzzle</div>
+                    <div style="height: 100px; background: #feebc8; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--warning);">Drawing App</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="sos" class="panel">
+            <div class="card" style="text-align: center;">
+                <h2>Emergency Help Button</h2>
+                <p>One-click alert system. Sends immediate notifications to parents and local authorities.</p>
+                <button class="sos-btn" onclick="triggerSOS()">SOS</button>
+                <p id="sos-status" style="display: none; color: var(--danger); font-weight: bold; margin-top: 20px;">
+                    🚨 ALERTS DISPATCHED. DEVICE LOCKED. 🚨
+                </p>
+            </div>
+        </div>
+
+    </div>
+
+<script>
+    // --- NEW: Added Tab Switching Logic ---
+    function showPanel(panelId, navElement) {
+        // Hide all panels
+        document.querySelectorAll('.panel').forEach(panel => {
+            panel.classList.remove('active');
+        });
+        // Remove active class from all nav items
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        
+        // Show selected panel and highlight nav item
+        document.getElementById(panelId).classList.add('active');
+        navElement.classList.add('active');
+    }
+
+    // --- NEW: Added Enter Key Support for Chat ---
+    function handleChatEnter(event) {
+        if (event.key === 'Enter') {
+            sendChatMessage();
+        }
+    }
+
+    // --- NEW: Placeholder for Trust Score ---
+    function generateTrustScore() {
+        const username = document.getElementById('usernameInput').value;
+        if(!username) return alert("Please enter a username!");
+        
+        document.getElementById('scoreResultArea').style.display = 'block';
+        document.getElementById('scoreLoader').style.display = 'block';
+        document.getElementById('scoreData').style.display = 'none';
+
+        // Simulate API call delay
+        setTimeout(() => {
+            document.getElementById('scoreLoader').style.display = 'none';
+            document.getElementById('scoreData').style.display = 'block';
+            document.getElementById('liveScoreCircle').innerText = "45";
+            document.getElementById('liveScoreCircle').style.borderColor = "var(--warning)";
+            document.getElementById('liveScoreCircle').style.color = "var(--warning)";
+            document.getElementById('scoreRiskTitle').innerText = "Moderate Risk";
+            document.getElementById('scoreRiskReason').innerText = "Account is new and has been flagged on 2 external platforms.";
+        }, 1500);
+    }
+
+    // --- NEW: Placeholder for SOS Button ---
+    function triggerSOS() {
+        const status = document.getElementById('sos-status');
+        status.style.display = 'block';
+        alert("SOS Triggered! Notifications sent.");
+    }
+
+    // --- UPDATED LIVE CHAT SYSTEM ---
+    async function sendChatMessage() {
+        const input = document.getElementById('chatInput');
+        const messageText = input.value.trim();
+        if (!messageText) return;
+
+        const chatBox = document.getElementById('chatBox');
+        
+        // Add user message to UI
+        const userMsg = document.createElement('div');
+        userMsg.className = 'msg sent';
+        userMsg.innerText = messageText;
+        chatBox.appendChild(userMsg);
+        
+        input.value = '';
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        // Send to Backend (Will fail if no backend is running)
+        try {
+            const response = await fetch('/api/agents/chat-monitor', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: messageText })
+            });
+            const result = await response.json();
+
+            if (result.action === "BLOCK") {
+                const warningMsg = document.createElement('div');
+                warningMsg.className = 'msg warning';
+                warningMsg.innerHTML = `🛡️ AI Alert: 👉 "This message contains manipulative or unsafe keywords." <br><span style="font-size: 0.8em;">Chat flagged for parental review.</span>`;
+                chatBox.appendChild(warningMsg);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+        } catch (error) {
+            console.error("Error connecting to AI Brain:", error);
+            // Optional: Add a fallback UI response if the server is offline
+            const errorMsg = document.createElement('div');
+            errorMsg.className = 'msg warning';
+            errorMsg.innerText = "Error: Backend server offline.";
+            chatBox.appendChild(errorMsg);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    }
+
+    // --- UPDATED IMAGE UPLOAD SYSTEM ---
+    async function processImageUpload(inputElement) {
+        // FIXED: Check for files[0] to ensure a file was actually selected
+        if (inputElement.files && inputElement.files[0]) {
+            const loader = document.getElementById('imageLoader');
+            const resultArea = document.getElementById('imageResult');
+            const title = document.getElementById('imageAlertTitle');
+            const text = document.getElementById('imageAlertText');
+            const btn = document.getElementById('imageActionBtn');
+
+            // UI Reset
+            loader.style.display = 'block';
+            resultArea.style.display = 'none';
+
+            // Prepare image to send to Python
+            const formData = new FormData();
+            // FIXED: Append the actual file, not the FileList object
+            formData.append("file", inputElement.files[0]);
+
+            try {
+                // Send to Backend (Will fail if no backend is running)
+                const response = await fetch('/api/agents/image-scanner', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+
+                loader.style.display = 'none';
+                resultArea.style.display = 'block';
+                
+                if (result.status === "DANGER") {
+                    title.innerText = "🚨 Alert: 98% Match Detected";
+                    title.style.color = "var(--danger)";
+                    text.innerText = result.details;
+                    btn.style.display = "inline-block";
+                } else {
+                    title.innerText = "✅ Image is Safe";
+                    title.style.color = "var(--success)";
+                    text.innerText = result.details;
+                    btn.style.display = "none";
+                }
+            } catch (error) {
+                console.error("Error connecting to AI Brain:", error);
+                loader.style.display = 'none';
+                // Optional: Show error in the UI
+                resultArea.style.display = 'block';
+                title.innerText = "❌ Connection Error";
+                title.style.color = "var(--danger)";
+                text.innerText = "Could not connect to the scanning server.";
+                btn.style.display = "none";
+            }
+        }
+    }
+</script>
+</body>
+</html>
